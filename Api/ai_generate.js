@@ -1,40 +1,28 @@
-// src/pages/api/ai_generate.js
+// api/ai/generate.js
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY // ضع مفتاحك في Vercel Environment Variables
 });
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).end();
+
+  const { section } = req.body;
+  if (!section) return res.status(400).json({ error: "يجب تحديد القسم" });
 
   try {
-    const { section, prompt } = req.body || {};
-
-    const systemMessage =
-      "أنت مساعد متخصص في كتابة محتوى نسائي راقٍ ومهذب لتطبيق 'رِقّة'.";
-
-    const userMessage =
-      prompt && prompt.trim().length > 0
-        ? prompt
-        : `اكتبي محتوى مناسب لقسم (${section}).`;
-
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-3.5-turbo",
       messages: [
-        { role: "system", content: systemMessage },
-        { role: "user", content: userMessage }
-      ],
-      max_tokens: 350
+        { role: "system", content: "أنت كاتبة محتوى لموقع نسائي." },
+        { role: "user", content: `اكتب محتوى مميز لقسم ${section}` }
+      ]
     });
-
-    const text = response.choices?.[0]?.message?.content || "";
-
+    const text = response.choices[0].message.content;
     res.status(200).json({ text });
   } catch (error) {
-    console.error("AI Error:", error);
-    res.status(500).json({ error: "فشل الاتصال بخادم الذكاء الاصطناعي" });
+    console.error(error);
+    res.status(500).json({ error: "فشل جلب المحتوى من AI" });
   }
 }
