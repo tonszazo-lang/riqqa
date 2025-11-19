@@ -1,0 +1,18 @@
+// api/upload_video.js
+import formidable from "formidable";
+import fs from "fs";
+import path from "path";
+
+export const config = { api: { bodyParser: false } };
+
+export default function handler(req, res) {
+  const uploadDir = path.join(process.cwd(), "public/uploads/videos");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+  const form = new formidable.IncomingForm({ uploadDir, keepExtensions: true });
+
+  form.parse(req, (err, fields, files) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(200).json({ success: true, filename: files.video.newFilename });
+  });
+}
